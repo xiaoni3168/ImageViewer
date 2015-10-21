@@ -1,8 +1,8 @@
 # ImageViewer
 
-#ImageViewer Special For Mobile Web
+##ImageViewer Special For Mobile Web
 
-#nginx配置
+##nginx配置
 ###MAC 下进入/usr/local/etc/nginx
 `vi nginx.conf`
 
