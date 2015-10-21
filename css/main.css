@@ -1,0 +1,87 @@
+body{
+    margin: 0;
+}
+
+.click-area{
+    height: 200px;
+    width: 200px;
+}
+
+.view-panel{
+    height: 100%;
+    width: 100%;
+    background-color: #000000;
+    position: fixed;
+    top: 0;
+}
+
+.img-view{
+    position: absolute;
+    transition: 500ms;
+    top: 50%;
+    left: 50%;
+}
+
+.zoomIn{
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    animation-name: zoomIn;
+    -webkit-animation-name: zoomIn;
+    animation-duration: .35s;
+    -webkit-animation-duration: .35s;
+    animation-fill-mode: both;
+    -webkit-animation-fill-mode: both;
+}
+
+.zoomOut{
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+    animation-name: zoomOut;
+    -webkit-animation-name: zoomOut;
+    animation-duration: .35s;
+    -webkit-animation-duration: .35s;
+}
+
+@keyframes zoomIn{
+    from {
+        transform: scale(0);
+        -webkit-transform: scale(0);
+    }
+    60% {
+        transform: scale(1.1);
+        -webkit-transform: scale(1.1);
+    }
+    to {
+        transform: scale(1);
+        -webkit-transform: scale(1);
+    }
+}
+
+@keyframes zoomOut{
+    from {
+        transform: scale(1);
+        -webkit-transform: scale(1);
+    }
+    40%{
+        transform: scale(1.1);
+        -webkit-transform: scale(1.1);
+    }
+    to {
+        transform: scale(0);
+        -webkit-transform: scale(0);
+    }
+}
+
+#test {
+    height: 50px;
+    width: 100px;
+    border: 1px solid #000;
+}
+
+#test:active{
+    background-color: #ffffff;
+}
+
+#test:visited{
+    background-color: #ffffff;
+}
