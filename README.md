@@ -1,5 +1,7 @@
 # ImageViewer
 
+#ImageViewer Special For Mobile Web
+
 #nginx配置
 ###MAC 下进入/usr/local/etc/nginx
 `vi nginx.conf`
@@ -21,7 +23,7 @@ server {
             index  index.html index.htm;
       	}
       	...
-      	
+
 现在重启nginx
 
 `nginx -s reload`
