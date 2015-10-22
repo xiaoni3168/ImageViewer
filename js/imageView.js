@@ -4,6 +4,32 @@
  *
  *Usage: $("#").imageViewer(imgURL);
  */
+
+ (function() {
+     var lastTime = 0;
+     var vendors = ['ms', 'moz', 'webkit', 'o'];
+     for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+         window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+         window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame']
+                                    || window[vendors[x]+'CancelRequestAnimationFrame'];
+     }
+
+     if (!window.requestAnimationFrame)
+         window.requestAnimationFrame = function(callback, element) {
+             var currTime = new Date().getTime();
+             var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+             var id = window.setTimeout(function() { callback(currTime + timeToCall); },
+               timeToCall);
+             lastTime = currTime + timeToCall;
+             return id;
+         };
+
+     if (!window.cancelAnimationFrame)
+         window.cancelAnimationFrame = function(id) {
+             clearTimeout(id);
+         };
+ }());
+
 (function ($) {
     var offsetX, offsetY;
     var distance1, distance2;
@@ -140,117 +166,118 @@
             theImage.style.height = currentHeight + "px";
             //this.val("100%");
         });
-
-        theImage.addEventListener('touchstart', function (event) {
-            panning = false;
-            zooming = false;
-            currentOffsetX = theImage.offsetLeft;
-            currentOffsetY = theImage.offsetTop;
-            if (event.touches.length == 1) {
-                panning = true;
-                startX0 = event.touches[0].pageX;
-                startY0 = event.touches[0].pageY;
-
-            }
-            if (event.touches.length == 2) {
-                zooming = true;
-                startX0 = event.touches[0].pageX;
-                startY0 = event.touches[0].pageY;
-                startX1 = event.touches[1].pageX;
-                startY1 = event.touches[1].pageY;
-                //Log("2finger:" + startX0 + ":" + startY0 + ", " + startX1 + ":" + startY1);
-                centerPointStartX = ((startX0 + startX1) / 2.0);
-                centerPointStartY = ((startY0 + startY1) / 2.0);
-                //Log("Center Start:" + centerPointStartX + ":" + centerPointStartY);
-                percentageOfImageAtPinchPointX = (centerPointStartX - currentOffsetX) / currentWidth;
-                percentageOfImageAtPinchPointY = (centerPointStartY - currentOffsetY) / currentHeight;
-                startDistanceBetweenFingers = Math.sqrt(Math.pow((startX1 - startX0), 2) + Math.pow((startY1 - startY0), 2));
-            }
-        });
-
-        theImage.addEventListener('touchmove', function (event) {
-            // This keeps touch events from moving the entire window.
-            event.preventDefault();
-
-            if (panning) {
-                endX0 = event.touches[0].pageX;
-                endY0 = event.touches[0].pageY;
-                translateFromTranslatingX = endX0 - startX0;
-                translateFromTranslatingY = endY0 - startY0;
-                newOffsetX = currentOffsetX + translateFromTranslatingX;
-                newOffsetY = currentOffsetY + translateFromTranslatingY;
-                theImage.style.left = newOffsetX + "px";
-                theImage.style.top = newOffsetY + "px";
-                theImage.style.marginTop = '0';
-
-            }
-            else if (zooming) {
-                // Get the new touches
-                endX0 = event.touches[0].pageX;
-                endY0 = event.touches[0].pageY;
-                endX1 = event.touches[1].pageX;
-                endY1 = event.touches[1].pageY;
-
-                // Calculate current distance between points to get new-to-old pinch ratio and calc width and height
-                endDistanceBetweenFingers = Math.sqrt(Math.pow((endX1 - endX0), 2) + Math.pow((endY1 - endY0), 2));
-                pinchRatio = endDistanceBetweenFingers / startDistanceBetweenFingers;
-                newContinuousZoom = pinchRatio * currentContinuousZoom;
-                newWidth = imgWidth * newContinuousZoom;
-                newHeight = imgHeight * newContinuousZoom;
-                // Get the point between the two touches, relative to upper-left corner of image
-                centerPointEndX = ((endX0 + endX1) / 2.0);
-                centerPointEndY = ((endY0 + endY1) / 2.0);
-                //Log("Center End:" + centerPointEndX + ":" + centerPointEndY);
-                // This is the translation due to pinch-zooming
-                translateFromZoomingX = (currentWidth - newWidth) * percentageOfImageAtPinchPointX;
-                translateFromZoomingY = (currentHeight - newHeight) * percentageOfImageAtPinchPointY;
-
-                // And this is the translation due to translation of the centerpoint between the two fingers
-                translateFromTranslatingX = centerPointEndX - centerPointStartX;
-                translateFromTranslatingY = centerPointEndY - centerPointStartY;
-
-                // Total translation is from two components: (1) changing height and width from zooming and (2) from the two fingers translating in unity
-                translateTotalX = translateFromZoomingX + translateFromTranslatingX;
-                translateTotalY = translateFromZoomingY + translateFromTranslatingY;
-
-                // the new offset is the old/current one plus the total translation component
-                newOffsetX = currentOffsetX + translateTotalX;
-                newOffsetY = currentOffsetY + translateTotalY;
-                //Log("pos:" + percentageOfImageAtPinchPointX + ":" + percentageOfImageAtPinchPointY);
-                // Set the image attributes on the page
-                theImage.style.left = newOffsetX + "px";
-                theImage.style.top = newOffsetY + "px";
-                theImage.style.width = newWidth + "px";
-                theImage.style.height = newHeight + "px";
-                theImage.style.marginTop = '0';
-            }
-        });
-
-        theImage.addEventListener('touchend', function (event) {
-            if (panning) {
+        requestAnimationFrame(function() {
+            theImage.addEventListener('touchstart', function (event) {
                 panning = false;
-                currentOffsetX = newOffsetX;
-                currentOffsetY = newOffsetY;
-
-            }
-            else if (zooming) {
                 zooming = false;
-                currentOffsetX = newOffsetX;
-                currentOffsetY = newOffsetY;
-                currentWidth = newWidth;
-                currentHeight = newHeight;
-                currentContinuousZoom = newContinuousZoom;
-                if(currentWidth < initImageWidth) {
-                    currentWidth = initImageWidth;
-                    currentHeight = initImageHeight;
-                    currentContinuousZoom = 1;
-                    theImage.style.width = initImageWidth + "px";
-                    theImage.style.height = initImageHeight + "px";
-                    theImage.style.top = "50%";
-                    theImage.style.marginTop = "-" + (initImageHeight / 2) + "px";
-                    theImage.style.left = "0";
+                currentOffsetX = theImage.offsetLeft;
+                currentOffsetY = theImage.offsetTop;
+                if (event.touches.length == 1) {
+                    panning = true;
+                    startX0 = event.touches[0].pageX;
+                    startY0 = event.touches[0].pageY;
+
                 }
-            }
+                if (event.touches.length == 2) {
+                    zooming = true;
+                    startX0 = event.touches[0].pageX;
+                    startY0 = event.touches[0].pageY;
+                    startX1 = event.touches[1].pageX;
+                    startY1 = event.touches[1].pageY;
+                    //Log("2finger:" + startX0 + ":" + startY0 + ", " + startX1 + ":" + startY1);
+                    centerPointStartX = ((startX0 + startX1) / 2.0);
+                    centerPointStartY = ((startY0 + startY1) / 2.0);
+                    //Log("Center Start:" + centerPointStartX + ":" + centerPointStartY);
+                    percentageOfImageAtPinchPointX = (centerPointStartX - currentOffsetX) / currentWidth;
+                    percentageOfImageAtPinchPointY = (centerPointStartY - currentOffsetY) / currentHeight;
+                    startDistanceBetweenFingers = Math.sqrt(Math.pow((startX1 - startX0), 2) + Math.pow((startY1 - startY0), 2));
+                }
+            });
+
+            theImage.addEventListener('touchmove', function (event) {
+                // This keeps touch events from moving the entire window.
+                event.preventDefault();
+
+                if (panning) {
+                    endX0 = event.touches[0].pageX;
+                    endY0 = event.touches[0].pageY;
+                    translateFromTranslatingX = endX0 - startX0;
+                    translateFromTranslatingY = endY0 - startY0;
+                    newOffsetX = currentOffsetX + translateFromTranslatingX;
+                    newOffsetY = currentOffsetY + translateFromTranslatingY;
+                    theImage.style.left = newOffsetX + "px";
+                    theImage.style.top = newOffsetY + "px";
+                    theImage.style.marginTop = '0';
+
+                }
+                else if (zooming) {
+                    // Get the new touches
+                    endX0 = event.touches[0].pageX;
+                    endY0 = event.touches[0].pageY;
+                    endX1 = event.touches[1].pageX;
+                    endY1 = event.touches[1].pageY;
+
+                    // Calculate current distance between points to get new-to-old pinch ratio and calc width and height
+                    endDistanceBetweenFingers = Math.sqrt(Math.pow((endX1 - endX0), 2) + Math.pow((endY1 - endY0), 2));
+                    pinchRatio = endDistanceBetweenFingers / startDistanceBetweenFingers;
+                    newContinuousZoom = pinchRatio * currentContinuousZoom;
+                    newWidth = imgWidth * newContinuousZoom;
+                    newHeight = imgHeight * newContinuousZoom;
+                    // Get the point between the two touches, relative to upper-left corner of image
+                    centerPointEndX = ((endX0 + endX1) / 2.0);
+                    centerPointEndY = ((endY0 + endY1) / 2.0);
+                    //Log("Center End:" + centerPointEndX + ":" + centerPointEndY);
+                    // This is the translation due to pinch-zooming
+                    translateFromZoomingX = (currentWidth - newWidth) * percentageOfImageAtPinchPointX;
+                    translateFromZoomingY = (currentHeight - newHeight) * percentageOfImageAtPinchPointY;
+
+                    // And this is the translation due to translation of the centerpoint between the two fingers
+                    translateFromTranslatingX = centerPointEndX - centerPointStartX;
+                    translateFromTranslatingY = centerPointEndY - centerPointStartY;
+
+                    // Total translation is from two components: (1) changing height and width from zooming and (2) from the two fingers translating in unity
+                    translateTotalX = translateFromZoomingX + translateFromTranslatingX;
+                    translateTotalY = translateFromZoomingY + translateFromTranslatingY;
+
+                    // the new offset is the old/current one plus the total translation component
+                    newOffsetX = currentOffsetX + translateTotalX;
+                    newOffsetY = currentOffsetY + translateTotalY;
+                    //Log("pos:" + percentageOfImageAtPinchPointX + ":" + percentageOfImageAtPinchPointY);
+                    // Set the image attributes on the page
+                    theImage.style.left = newOffsetX + "px";
+                    theImage.style.top = newOffsetY + "px";
+                    theImage.style.width = newWidth + "px";
+                    theImage.style.height = newHeight + "px";
+                    theImage.style.marginTop = '0';
+                }
+            });
+
+            theImage.addEventListener('touchend', function (event) {
+                if (panning) {
+                    panning = false;
+                    currentOffsetX = newOffsetX;
+                    currentOffsetY = newOffsetY;
+
+                }
+                else if (zooming) {
+                    zooming = false;
+                    currentOffsetX = newOffsetX;
+                    currentOffsetY = newOffsetY;
+                    currentWidth = newWidth;
+                    currentHeight = newHeight;
+                    currentContinuousZoom = newContinuousZoom;
+                    if(currentWidth < initImageWidth) {
+                        currentWidth = initImageWidth;
+                        currentHeight = initImageHeight;
+                        currentContinuousZoom = 1;
+                        theImage.style.width = initImageWidth + "px";
+                        theImage.style.height = initImageHeight + "px";
+                        theImage.style.top = "50%";
+                        theImage.style.marginTop = "-" + (initImageHeight / 2) + "px";
+                        theImage.style.left = "0";
+                    }
+                }
+            });
         });
 
         function zoomImg(o, e) {
