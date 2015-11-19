@@ -10,7 +10,7 @@ setTimeout(function() {
         var viewer = document.createElement('div');
         dom.setAttribute('id', 'viewPanel');
         dom.setAttribute('class', 'view-panel zoomIn');
-        $(dom).css('transform-origin', event.clientX + 'px ' + event.clientY + 'px');
+        $(dom).css('-webkit-transform-origin', event.clientX + 'px ' + event.clientY + 'px');
         // img.setAttribute('class', 'img-view');
         // img.style.margin = '-' + image.height / 2 + 'px 0 0 -' + image.width / 2 + 'px';
         // dom.onclick = function(event) {
